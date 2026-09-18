@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Dodge</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #172554 0%, #050816 45%, #02030a 100%);
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .game-container {
+      width: min(950px, 95vw);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: clamp(32px, 6vw, 60px);
+      margin-bottom: 8px;
+      color: #67e8f9;
+      text-shadow:
+        0 0 10px #06b6d4,
+        0 0 30px #0891b2;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 18px;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hud-box {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px;
+      border: 1px solid #164e63;
+      border-radius: 12px;
+      background: rgba(8, 47, 73, 0.65);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.12);
+    }
+
+    .hud-box span {
+      display: block;
+      color: #67e8f9;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .hud-box strong {
+      font-size: 22px;
+    }
+
+    #game {
+      position: relative;
+      width: 100%;
+      height: min(600px, 65vh);
+      min-height: 400px;
+      overflow: hidden;
+      border: 2px solid #0891b2;
+      border-radius: 18px;
+      background:
+        linear-gradient(rgba(34, 211, 238, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, .05) 1px, transparent 1px),
+        #020617;
+      background-size: 40px 40px;
+      box-shadow:
+        0 0 30px rgba(6, 182, 212, .2),
+        inset 0 0 50px rgba(14, 116, 144, .1);
+    }
+
+    #player {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #67e8f9, #06b6d4);
+      box-shadow:
+        0 0 12px #22d3ee,
+        0 0 30px #0891b2;
+      transform: rotate(45deg);
+    }
+
+    .enemy {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #fb7185, #e11d48);
+      box-shadow:
+        0 0 12px #f43f5e,
+        0 0 25px rgba(244, 63, 94, .6);
+      transform: rotate(45deg);
+    }
+
+    .coin {
+      position: absolute;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #facc15;
+      box-shadow:
+        0 0 10px #facc15,
+        0 0 25px #eab308;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, .86);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .modal {
+      width: min(430px, 90%);
+      padding: 35px;
+      border-radius: 20px;
+      border: 1px solid #155e75;
+      background: linear-gradient(145deg, #0f172a, #082f49);
+      box-shadow: 0 0 50px rgba(6, 182, 212, .2);
+    }
+
+    .modal h2 {
+      font-size: 38px;
+      color: #67e8f9;
+      margin-bottom: 12px;
+    }
+
+    .modal p {
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 14px 28px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg, #0891b2, #2563eb);
+      box-shadow: 0 5px 20px rgba(37, 99, 235, .3);
+      transition: .2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(34, 211, 238, .4);
+    }
+
+    .controls {
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .mobile-controls {
+      display: none;
+      margin: 15px auto 0;
+      width: 180px;
+      grid-template-columns: repeat(3, 55px);
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .mobile-controls button {
+      padding: 12px;
+      font-size: 18px;
+    }
+
+    .mobile-controls button:nth-child(1) {
+      grid-column: 2;
+    }
+
+    @media (max-width: 700px) {
+      .mobile-controls {
+        display: grid;
+      }
+
+      .controls {
+        display: none;
+      }
+
+      #game {
+        height: 55vh;
+        min-height: 350px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-container">
+
+    <h1>NEON DODGE</h1>
+    <p class="subtitle">Sobreviva o máximo que conseguir.</p>
+
+    <div class="hud">
+      <div class="hud-box">
+        <span>PONTOS</span>
+        <strong id="score">0</strong>
+      </div>
+
+      <div class="hud-box">
+        <span>VIDAS</span>
+        <strong id="lives">❤️❤️❤️</strong>
+      </div>
+
+      <div class="hud-box">
+        <span>NÍVEL</span>
+        <strong id="level">1</strong>
+      </div>
+    </div>
+
+    <div id="game">
+      <div id="player"></div>
+
+      <div class="overlay" id="overlay">
+        <div class="modal">
+          <h2 id="modalTitle">NEON DODGE</h2>
+          <p id="modalText">
+            Use as teclas <b>WASD</b> ou as <b>setas</b> para movimentar
+            o jogador. Desvie dos inimigos vermelhos e pegue as moedas.
+          </p>
+          <button id="startButton">JOGAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      Use <b>WASD</b> ou as <b>setas</b> para movimentar
+    </div>
+
+    <div class="mobile-controls">
+      <button data-key="ArrowUp">▲</button>
+      <button data-key="ArrowLeft">◀</button>
+      <button data-key="ArrowDown">▼</button>
+      <button data-key="ArrowRight">▶</button>
+    </div>
+
+  </div>
+
+<script>
+  const game = document.getElementById("game");
+  const player = document.getElementById("player");
+  const overlay = document.getElementById("overlay");
+  const startButton = document.getElementById("startButton");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalText = document.getElementById("modalText");
+
+  const scoreElement = document.getElementById("score");
+  const livesElement = document.getElementById("lives");
+  const levelElement = document.getElementById("level");
+
+  let playerX;
+  let playerY;
+
+  let score = 0;
+  let lives = 3;
+  let level = 1;
+
+  let enemies = [];
+  let coins = [];
+
+  let running = false;
+  let animation;
+  let enemyTimer;
+  let coinTimer;
+
+  const keys = {};
+
+  const PLAYER_SIZE = 42;
+
+  function resetPlayer() {
+    playerX = game.clientWidth / 2 - PLAYER_SIZE / 2;
+    playerY = game.clientHeight - 80;
+
+    updatePlayer();
+  }
+
+  function updatePlayer() {
+    player.style.left = playerX + "px";
+    player.style.top = playerY + "px";
+  }
+
+  function updateHUD() {
+    scoreElement.textContent = score;
+    livesElement.textContent = "❤️".repeat(lives) + "🖤".repeat(3 - lives);
+    levelElement.textContent = level;
+  }
+
+  function startGame() {
+    cancelAnimationFrame(animation);
+    clearInterval(enemyTimer);
+    clearInterval(coinTimer);
+
+    document.querySelectorAll(".enemy, .coin").forEach(el => el.remove());
+
+    enemies = [];
+    coins = [];
+
+    score = 0;
+    lives = 3;
+    level = 1;
+
+    running = true;
+
+    overlay.style.display = "none";
+
+    resetPlayer();
+    updateHUD();
+
+    enemyTimer = setInterval(createEnemy, 700);
+    coinTimer = setInterval(createCoin, 1800);
+
+    gameLoop();
+  }
+
+  function createEnemy() {
+    if (!running) return;
+
+    const enemy = document.createElement("div");
+    enemy.className = "enemy";
+
+    const size = 34;
+
+    enemy.x = Math.random() * (game.clientWidth - size);
+    enemy.y = -size;
+
+    enemy.speed = 2 + Math.random() * 2 + level * 0.25;
+
+    enemy.style.left = enemy.x + "px";
+    enemy.style.top = enemy.y + "px";
+
+    game.appendChild(enemy);
+    enemies.push(enemy);
+  }
+
+  function createCoin() {
+    if (!running) return;
+
+    const coin = document.createElement("div");
+    coin.className = "coin";
+
+    const size = 25;
+
+    coin.x = Math.random() * (game.clientWidth - size);
+    coin.y = -size;
+
+    coin.speed = 2 + level * 0.15;
+
+    coin.style.left = coin.x + "px";
+    coin.style.top = coin.y + "px";
+
+    game.appendChild(coin);
+    coins.push(coin);
+  }
+
+  function collision(a, b, padding = 0) {
+    return (
+      a.x < b.x + b.width - padding &&
+      a.x + a.width > b.x + padding &&
+      a.y < b.y + b.height - padding &&
+      a.y + a.height > b.y + padding
+    );
+  }
+
+  function gameLoop() {
+    if (!running) return;
+
+    movePlayer();
+    moveEnemies();
+    moveCoins();
+
+    score++;
+
+    const newLevel = Math.floor(score / 1000) + 1;
+
+    if (newLevel !== level) {
+      level = newLevel;
+      updateHUD();
+    }
+
+    if (score % 10 === 0) {
+      scoreElement.textContent = score;
+    }
+
+    animation = requestAnimationFrame(gameLoop);
+  }
+
+  function movePlayer() {
+    const speed = 6;
+
+    if (keys["ArrowUp"] || keys["w"] || keys["W"]) {
+      playerY -= speed;
+    }
+
+    if (keys["ArrowDown"] || keys["s"] || keys["S"]) {
+      playerY += speed;
+    }
+
+    if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
+      playerX -= speed;
+    }
+
+    if (keys["ArrowRight"] || keys["d"] || keys["D"]) {
+      playerX += speed;
+    }
+
+    playerX = Math.max(
+      0,
+      Math.min(game.clientWidth - PLAYER_SIZE, playerX)
+    );
+
+    playerY = Math.max(
+      0,
+      Math.min(game.clientHeight - PLAYER_SIZE, playerY)
+    );
+
+    updatePlayer();
+  }
+
+  function moveEnemies() {
+    const playerRect = {
+      x: playerX,
+      y: playerY,
+      width: PLAYER_SIZE,
+      height: PLAYER_SIZE
+    };
+
+    enemies.forEach((enemy, index) => {
+      enemy.y += enemy.speed;
+      enemy.style.top = enemy.y + "px";
+
+      const enemyRect = {
+        x: enemy.x,
+        y: enemy.y,
+        width: 34,
+        height: 34
+      };
+
+      if (collision(playerRect, enemyRect, 5)) {
+        enemy.remove();
+        enemies.splice(index, 1);
+
+        lives--;
+        updateHUD();
+
+        if (lives <= 0) {
+          gameOver();
+        }
+      }
+
+      if (enemy.y > game.clientHeight + 50) {
+        enemy.remove();
+        enemies.splice(index, 1);
+      }
+    });
+  }
+
+  function moveCoins() {
+    const playerRect = {
+      x: playerX,
+      y: playerY,
+      width: PLAYER_SIZE,
+      height: PLAYER_SIZE
+    };
+
+    coins.forEach((coin, index) => {
+      coin.y += coin.speed;
+      coin.style.top = coin.y + "px";
+
+      const coinRect = {
+        x: coin.x,
+        y: coin.y,
+        width: 25,
+        height: 25
+      };
+
+      if (collision(playerRect, coinRect)) {
+        coin.remove();
+        coins.splice(index, 1);
+
+        score += 250;
+        updateHUD();
+      }
+
+      if (coin.y > game.clientHeight + 50) {
+        coin.remove();
+        coins.splice(index, 1);
+      }
+    });
+  }
+
+  function gameOver() {
+    running = false;
+
+    cancelAnimationFrame(animation);
+    clearInterval(enemyTimer);
+    clearInterval(coinTimer);
+
+    modalTitle.textContent = "GAME OVER";
+    modalText.innerHTML =
+      `Você fez <b>${score}</b> pontos e chegou ao nível <b>${level}</b>.<br><br>
+       Tente novamente e supere sua pontuação!`;
+
+    startButton.textContent = "JOGAR NOVAMENTE";
+    overlay.style.display = "flex";
+  }
+
+  document.addEventListener("keydown", event => {
+    keys[event.key] = true;
+
+    if (
+      ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
+    ) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener("keyup", event => {
+    keys[event.key] = false;
+  });
+
+  document.querySelectorAll(".mobile-controls button").forEach(button => {
+    const key = button.dataset.key;
+
+    button.addEventListener("touchstart", event => {
+      event.preventDefault();
+      keys[key] = true;
+    });
+
+    button.addEventListener("touchend", event => {
+      event.preventDefault();
+      keys[key] = false;
+    });
+
+    button.addEventListener("mousedown", () => {
+      keys[key] = true;
+    });
+
+    button.addEventListener("mouseup", () => {
+      keys[key] = false;
+    });
+
+    button.addEventListener("mouseleave", () => {
+      keys[key] = false;
+    });
+  });
+
+  startButton.addEventListener("click", startGame);
+
+  window.addEventListener("resize", () => {
+    if (running) {
+      playerX = Math.min(playerX, game.clientWidth - PLAYER_SIZE);
+      playerY = Math.min(playerY, game.clientHeight - PLAYER_SIZE);
+      updatePlayer();
+    }
+  });
+
+  resetPlayer();
+  updateHUD();
+</script>
+
+</body>
+</html>
